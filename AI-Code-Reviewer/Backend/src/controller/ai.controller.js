@@ -10,7 +10,32 @@ module.exports.getReview = async (req, res) => {
   }
 
   try {
-    const response = await aiService(code);
+    let responseText = await aiService(code);
+    let terminalError = null;
+
+    // 1. Programmatic JS Syntax Check
+    if (language === "javascript") {
+      const vm = require("vm");
+      try {
+        new vm.Script(code);
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          let stack = e.stack || "";
+          stack = stack.replace(/evalmachine\.<anonymous>/g, "index.js");
+          terminalError = `[Running] node "index.js"\n${stack}`;
+        }
+      }
+    }
+
+    // 2. Parse AI-generated terminal error if programmatic check didn't catch one or if we want to combine
+    const terminalErrorRegex = /\[TERMINAL_ERROR\]([\s\S]*?)\[\/TERMINAL_ERROR\]/;
+    const match = responseText.match(terminalErrorRegex);
+    if (match) {
+      if (!terminalError) {
+        terminalError = match[1].trim();
+      }
+      responseText = responseText.replace(terminalErrorRegex, "").trim();
+    }
 
     const db = getDB();
     if (db) {
@@ -18,7 +43,8 @@ module.exports.getReview = async (req, res) => {
         await db.collection("reviews").insertOne({
           code,
           language,
-          review: response,
+          review: responseText,
+          error: terminalError,
           createdAt: new Date()
         });
       } catch (dbError) {
@@ -27,10 +53,15 @@ module.exports.getReview = async (req, res) => {
       }
     }
 
-    res.send(response);
+    res.json({
+      review: responseText,
+      error: terminalError
+    });
   } catch (error) {
     console.error("Error processing code review:", error);
-    res.status(500).send("❌ Error fetching review from AI Engine. Please check server logs and try again.");
+    res.status(500).json({
+      error: "❌ Error fetching review from AI Engine. Please check server logs and try again."
+    });
   }
 };
 
@@ -51,6 +82,7 @@ module.exports.getHistory = async (req, res) => {
       language: item.language || "javascript",
       code: item.code,
       review: item.review,
+      error: item.error || null,
       date: item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " - " + new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""
     }));
 
