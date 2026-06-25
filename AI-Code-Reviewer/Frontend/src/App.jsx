@@ -80,7 +80,7 @@ function App() {
   async function fetchHistory() {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/ai/history`
+        `${import.meta.env.VITE_API_URL || "https://codeinsight-ai-1.onrender.com"}/ai/history`
       );
       setHistory(response.data);
       localStorage.setItem("codereview_history", JSON.stringify(response.data));
@@ -126,7 +126,7 @@ function App() {
     setTerminalError(null);
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/ai/get-review`,
+        `${import.meta.env.VITE_API_URL || "https://codeinsight-ai-1.onrender.com"}/ai/get-review`,
         { code, language: selectedLang }
       );
       
@@ -141,7 +141,7 @@ function App() {
       // Sync history with backend database
       try {
         const historyRes = await axios.get(
-          `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/ai/history`
+          `${import.meta.env.VITE_API_URL || "https://codeinsight-ai-1.onrender.com"}/ai/history`
         );
         const updatedHistory = historyRes.data;
         setHistory(updatedHistory);
@@ -194,7 +194,7 @@ function App() {
   const clearHistory = async () => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/ai/history`
+        `${import.meta.env.VITE_API_URL || "https://codeinsight-ai-1.onrender.com"}/ai/history`
       );
     } catch (error) {
       console.error("Failed to clear history on backend:", error);
