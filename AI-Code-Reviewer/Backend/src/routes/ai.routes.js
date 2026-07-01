@@ -6,5 +6,6 @@ const router = express.Router();
 router.post("/get-review", aiController.getReview);
 router.get("/history", aiController.getHistory);
 router.delete("/history", aiController.clearHistory);
+router.delete("/history/:id", aiController.deleteHistoryItem);
 
 module.exports = router;
